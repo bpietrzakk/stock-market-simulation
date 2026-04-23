@@ -40,6 +40,9 @@ The application runs as multiple instances behind an nginx load balancer. If one
 The application will be available at `http://localhost:<PORT>`.
 
 ## API Endpoints
+```bash
+# TODO: will be updated
+```
 
 <!-- TODO: endpoint documentation will be added as they are implemented -->
 
