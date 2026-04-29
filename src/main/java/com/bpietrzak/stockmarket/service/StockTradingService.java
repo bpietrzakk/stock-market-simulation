@@ -14,7 +14,6 @@ import com.bpietrzak.stockmarket.exception.NotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -40,24 +39,45 @@ public class StockTradingService {
     @Transactional
     public void buy(UUID walletId, String stockName) {
         // check if stock exist in the bank
-        BankStock stock = bankStockRepository.findByName(stockName).orElseThrow(() -> new NotFoundException("Stock not found: " + stockName));
+        BankStock bankStock = bankStockRepository.findByName(stockName).orElseThrow(() -> new NotFoundException("Stock not found: " + stockName));
 
-        // check if there are any stocks left to sell
-        if (stock.getQuantity() <= 0) {
+        // check if there are any stocks left to sell in bank
+        if (bankStock.getQuantity() <= 0) {
             throw new InvalidOperationException("Stock " + stockName + " is out of stock");
         }
 
         // check if wallet exists, if not -> create
         Wallet wallet = walletRepository.findById(walletId).orElseGet(() -> walletRepository.save(new Wallet(walletId)));
 
-        // -- stocks number in bank
-        stock.setQuantity(stock.getQuantity() - 1);
-
-        // ++ stocks number in wallet
+        // create wallet stock entry on first buy of this stock
         WalletStock walletStock = walletStockRepository.findByWalletAndName(wallet, stockName).orElseGet(() -> walletStockRepository.save(new WalletStock(wallet, stockName, 0)));
-        walletStock.setQuantity(walletStock.getQuantity() + 1);
 
-        // save auditLog
+        // transfer stock from bank to wallet
+        walletStock.setQuantity(walletStock.getQuantity() + 1);
+        bankStock.setQuantity(bankStock.getQuantity() - 1);
+
+        // audit trail
         auditLogRepository.save(new AuditLog(TransactionType.BUY, walletId, stockName));
+    }
+
+    @Transactional
+    public void sell(UUID walletId, String stockName) {
+        // check if stock exist in bank
+        BankStock bankStock = bankStockRepository.findByName(stockName).orElseThrow(() -> new NotFoundException("Stock not found: " + stockName));
+
+        // check if wallet exist, if not -> create it
+        Wallet wallet = walletRepository.findById(walletId).orElseGet(() -> walletRepository.save(new Wallet(walletId)));
+
+        // check if there are any stocks left to sell in wallet
+        WalletStock walletStock = walletStockRepository.findByWalletAndName(wallet, stockName)
+                .filter(ws -> ws.getQuantity() > 0)
+                .orElseThrow(() -> new InvalidOperationException("Wallet doesn't have enough stocks: " + stockName));
+
+        // transfer stock from wallet to bank
+        walletStock.setQuantity(walletStock.getQuantity() - 1);
+        bankStock.setQuantity(bankStock.getQuantity() + 1);
+
+        // audit trail
+        auditLogRepository.save(new AuditLog(TransactionType.SELL, walletId, stockName));
     }
 }
