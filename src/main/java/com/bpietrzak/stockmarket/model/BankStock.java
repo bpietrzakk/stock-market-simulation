@@ -23,7 +23,7 @@ public class BankStock {
 
     public BankStock(String name, int quantity) {
         this.name = name;
-        this.quantity = quantity;
+        setQuantity(quantity);
     }
 
     // GETTERS
