@@ -16,12 +16,12 @@ public class BankStock {
 
     // quantity - integer
     @Column(nullable = false)
-    private Integer quantity;
+    private int quantity;
 
     // CONSTRUCTORS
     public BankStock() {}
 
-    public BankStock(String name, Integer quantity) {
+    public BankStock(String name, int quantity) {
         this.name = name;
         this.quantity = quantity;
     }
@@ -34,16 +34,15 @@ public class BankStock {
         return name;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
     // SETTERS
     public void setQuantity(int quantity) {
-        if (quantity >= 0) {
-            this.quantity = quantity;
-        } else {
+        if (quantity < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
+        this.quantity = quantity;
     }
 }

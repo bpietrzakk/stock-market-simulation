@@ -34,6 +34,7 @@ public class StockTradingService {
         this.walletStockRepository = walletStockRepository;
         this.auditLogRepository = auditLogRepository;
     }
+
     // methods buy() and sell()
 
     @Transactional
