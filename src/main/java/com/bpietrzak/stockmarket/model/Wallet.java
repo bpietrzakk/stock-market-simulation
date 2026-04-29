@@ -7,11 +7,14 @@ import java.util.UUID;
 @Table(name = "wallets")
 public class Wallet {
     @Id // Primary Key
-    @GeneratedValue(strategy = GenerationType.UUID) // PK set to UUID
     private UUID id;
 
     // constructor
     public Wallet() {}
+
+    public Wallet(UUID uuid) {
+        this.id = uuid;
+    }
 
     // getter id
     public UUID getId() {

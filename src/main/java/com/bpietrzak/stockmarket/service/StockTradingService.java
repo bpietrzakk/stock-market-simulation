@@ -9,10 +9,10 @@ import com.bpietrzak.stockmarket.repository.BankStockRepository;
 import com.bpietrzak.stockmarket.repository.WalletRepository;
 import com.bpietrzak.stockmarket.repository.WalletStockRepository;
 import com.bpietrzak.stockmarket.repository.AuditLogRepository;
+import com.bpietrzak.stockmarket.exception.InvalidOperationException;
+import com.bpietrzak.stockmarket.exception.NotFoundException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -38,25 +38,26 @@ public class StockTradingService {
     // methods buy() and sell()
 
     @Transactional
-    public void buy(UUID walletID, String stockName) {
-        // check if stock exist (404)
-        BankStock stock = bankStockRepository.findByName(stockName).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "stock not found"));
+    public void buy(UUID walletId, String stockName) {
+        // check if stock exist in the bank
+        BankStock stock = bankStockRepository.findByName(stockName).orElseThrow(() -> new NotFoundException("Stock not found: " + stockName));
 
-        // check if stock is in the bank (>0) (400)
+        // check if there are any stocks left to sell
         if (stock.getQuantity() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "there is no stock in bank");
+            throw new InvalidOperationException("Stock " + stockName + " is out of stock");
         }
 
         // check if wallet exists, if not -> create
-        Wallet wallet = walletRepository.findById(walletID).orElseGet(() -> walletRepository.save(new Wallet()));
+        Wallet wallet = walletRepository.findById(walletId).orElseGet(() -> walletRepository.save(new Wallet(walletId)));
 
         // -- stocks number in bank
         stock.setQuantity(stock.getQuantity() - 1);
+
         // ++ stocks number in wallet
-        WalletStock walletStock = walletStockRepository.findByWalletAndName(wallet, stockName).orElseGet(() -> new WalletStock(wallet, stockName, 0));
+        WalletStock walletStock = walletStockRepository.findByWalletAndName(wallet, stockName).orElseGet(() -> walletStockRepository.save(new WalletStock(wallet, stockName, 0)));
         walletStock.setQuantity(walletStock.getQuantity() + 1);
-        walletStockRepository.save(walletStock);
+
         // save auditLog
-        auditLogRepository.save(new AuditLog(TransactionType.BUY, walletID, stockName));
+        auditLogRepository.save(new AuditLog(TransactionType.BUY, walletId, stockName));
     }
 }
