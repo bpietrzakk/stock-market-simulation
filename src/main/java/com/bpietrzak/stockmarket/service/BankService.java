@@ -1,7 +1,7 @@
 package com.bpietrzak.stockmarket.service;
 
 import com.bpietrzak.stockmarket.dto.BankResponse;
-import com.bpietrzak.stockmarket.dto.BankUpdateRequest;
+import com.bpietrzak.stockmarket.dto.BankStateRequest;
 import com.bpietrzak.stockmarket.exception.InvalidOperationException;
 import com.bpietrzak.stockmarket.model.BankStock;
 import com.bpietrzak.stockmarket.repository.BankStockRepository;
@@ -32,18 +32,18 @@ public class BankService {
     }
 
     @Transactional
-    public void setBankState(BankUpdateRequest bankUpdateRequest) {
+    public void setBankState(BankStateRequest bankStateRequest) {
         // check for duplicate
-        Set<String> uniqueNames = bankUpdateRequest.stocks().stream()
+        Set<String> uniqueNames = bankStateRequest.stocks().stream()
                 .map(StockDto::name)
                 .collect(Collectors.toSet());
 
-        if (uniqueNames.size() != bankUpdateRequest.stocks().size()) {
+        if (uniqueNames.size() != bankStateRequest.stocks().size()) {
             throw new InvalidOperationException("Duplicate stock names in request");
         }
         bankStockRepository.deleteAllInBatch();
 
-        List<BankStock> stocks = bankUpdateRequest.stocks().stream()
+        List<BankStock> stocks = bankStateRequest.stocks().stream()
                 .map(dto -> new BankStock(dto.name(), dto.quantity()))
                 .toList();
 

@@ -2,4 +2,4 @@ package com.bpietrzak.stockmarket.dto;
 
 import java.util.List;
 
-public record BankUpdateRequest(List<StockDto> stocks) {}
+public record BankStateRequest(List<StockDto> stocks) {}
