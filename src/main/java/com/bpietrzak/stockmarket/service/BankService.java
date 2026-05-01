@@ -34,17 +34,17 @@ public class BankService {
     @Transactional
     public void setBankState(BankUpdateRequest bankUpdateRequest) {
         // check for duplicate
-        Set<String> uniqueNames = bankUpdateRequest.getStocks().stream()
-                .map(StockDto::getName)
+        Set<String> uniqueNames = bankUpdateRequest.stocks().stream()
+                .map(StockDto::name)
                 .collect(Collectors.toSet());
 
-        if (uniqueNames.size() != bankUpdateRequest.getStocks().size()) {
+        if (uniqueNames.size() != bankUpdateRequest.stocks().size()) {
             throw new InvalidOperationException("Duplicate stock names in request");
         }
         bankStockRepository.deleteAllInBatch();
 
-        List<BankStock> stocks = bankUpdateRequest.getStocks().stream()
-                .map(dto -> new BankStock(dto.getName(), dto.getQuantity()))
+        List<BankStock> stocks = bankUpdateRequest.stocks().stream()
+                .map(dto -> new BankStock(dto.name(), dto.quantity()))
                 .toList();
 
         bankStockRepository.saveAll(stocks);
