@@ -1,6 +1,6 @@
 package com.bpietrzak.stockmarket.service;
 
-import com.bpietrzak.stockmarket.dto.BankResponse;
+import com.bpietrzak.stockmarket.dto.BankStateResponse;
 import com.bpietrzak.stockmarket.dto.BankStateRequest;
 import com.bpietrzak.stockmarket.exception.InvalidOperationException;
 import com.bpietrzak.stockmarket.model.BankStock;
@@ -24,11 +24,11 @@ public class BankService {
 
     // methods
     @Transactional(readOnly = true)
-    public BankResponse getBankState() {
+    public BankStateResponse getBankState() {
         List<StockDto> stocks = bankStockRepository.findAll().stream()
                 .map(bs -> new StockDto(bs.getName(), bs.getQuantity()))
                 .toList();
-        return new BankResponse(stocks);
+        return new BankStateResponse(stocks);
     }
 
     @Transactional
