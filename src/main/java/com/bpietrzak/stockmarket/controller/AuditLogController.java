@@ -20,7 +20,7 @@ public class AuditLogController {
     // ENDPOINTS
     // GET: returns entire audit log in order of occurrence
     @GetMapping
-    public ResponseEntity<AuditLogResponse> getLog() {
+    public ResponseEntity<AuditLogResponse> getLogs() {
         AuditLogResponse log = auditLogService.getLog();
 
         return ResponseEntity.ok(log);
