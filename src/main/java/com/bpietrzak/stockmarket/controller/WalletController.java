@@ -4,6 +4,7 @@ import com.bpietrzak.stockmarket.dto.TradeRequest;
 import com.bpietrzak.stockmarket.dto.WalletResponse;
 import com.bpietrzak.stockmarket.service.StockTradingService;
 import com.bpietrzak.stockmarket.service.WalletService;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,8 +47,12 @@ public class WalletController {
         return ResponseEntity.ok(walletResponse);
     }
 
-
-    // GET /wallets/{wallet_id}
-
-    // GET /wallets/{wallet_id}/stocks/{stock_name}
+    // GET: returns quantity of the specified stock in the specified wallet
+    @GetMapping("/{wallet_id}/stocks/{stock_name}")
+    public ResponseEntity<Integer> getStockQuantity(
+            @PathVariable("wallet_id") UUID walletId,
+            @PathVariable("stock_name") String stockName) {
+        Integer quantity = walletService.getStockQuantity(walletId, stockName);
+        return ResponseEntity.ok(quantity);
+    }
 }
