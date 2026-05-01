@@ -4,6 +4,7 @@ import com.bpietrzak.stockmarket.dto.TradeRequest;
 import com.bpietrzak.stockmarket.dto.WalletResponse;
 import com.bpietrzak.stockmarket.service.StockTradingService;
 import com.bpietrzak.stockmarket.service.WalletService;
+import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class WalletController {
     public ResponseEntity<Void> trade(
             @PathVariable("wallet_id") UUID walletId,
             @PathVariable("stock_name") String stockName,
-            @RequestBody TradeRequest request) {
+            @Valid @RequestBody TradeRequest request) {
 
         // buy or sell - depending on the body
         switch (request.type()) {
