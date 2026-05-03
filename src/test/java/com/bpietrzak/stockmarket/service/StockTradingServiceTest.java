@@ -89,4 +89,22 @@ class StockTradingServiceTest {
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining(stockName);
     }
+
+    @Test
+    void sellShouldThrowInvalidOperationWhenWalletHasNoStocks() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        Wallet wallet = new Wallet(walletId);
+        String stockName = "NotInWalletStock";
+        BankStock bankStock = new BankStock(stockName, 1);
+        WalletStock walletStock = new WalletStock(wallet, stockName, 0);
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
+        when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
+        when(walletStockRepository.findByWalletAndName(wallet, stockName)).thenReturn(Optional.of(walletStock));
+
+        // call and check if an exception was thrown
+        assertThatThrownBy(() -> service.sell(walletId, stockName))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining(stockName);
+    }
 }
