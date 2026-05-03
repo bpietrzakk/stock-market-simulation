@@ -3,6 +3,8 @@ package com.bpietrzak.stockmarket.service;
 import com.bpietrzak.stockmarket.exception.InvalidOperationException;
 import com.bpietrzak.stockmarket.exception.NotFoundException;
 import com.bpietrzak.stockmarket.model.BankStock;
+import com.bpietrzak.stockmarket.model.Wallet;
+import com.bpietrzak.stockmarket.model.WalletStock;
 import com.bpietrzak.stockmarket.repository.AuditLogRepository;
 import com.bpietrzak.stockmarket.repository.BankStockRepository;
 import com.bpietrzak.stockmarket.repository.WalletRepository;
@@ -54,6 +56,36 @@ class StockTradingServiceTest {
 
         // call and check if an exception was thrown
         assertThatThrownBy(() -> service.buy(walletId, stockName))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining(stockName);
+    }
+
+    @Test
+    void sellShouldThrowNotFoundWhenStockDoesNotExist() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        String stockName = "DontExist";
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.empty());
+
+        // call and check if an exception was thrown
+        assertThatThrownBy(() -> service.sell(walletId, stockName))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(stockName);
+    }
+
+    @Test
+    void sellShouldThrowInvalidOperationWhenWalletHasNoStock() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        Wallet wallet = new Wallet(walletId);
+        String stockName = "NotInWalletStock";
+        BankStock bankStock = new BankStock(stockName, 1);
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
+        when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
+        when(walletStockRepository.findByWalletAndName(wallet, stockName)).thenReturn(Optional.empty());
+
+        // call and check if an exception was thrown
+        assertThatThrownBy(() -> service.sell(walletId, stockName))
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining(stockName);
     }
