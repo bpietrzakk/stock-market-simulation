@@ -140,4 +140,33 @@ class StockTradingServiceTest {
         assertThat(savedLog.getWalletId()).isEqualTo(walletId);
         assertThat(savedLog.getStockName()).isEqualTo(stockName);
     }
+
+    @Test
+    void sellShouldTransferStockFromWalletToBankAndLogIt() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        Wallet wallet = new Wallet(walletId);
+        String stockName = "example";
+        BankStock bankStock = new BankStock(stockName, 1);
+        WalletStock walletStock = new WalletStock(wallet, stockName, 1);
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
+        when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
+        when(walletStockRepository.findByWalletAndName(wallet, stockName)).thenReturn(Optional.of(walletStock));
+
+        // call
+        service.sell(walletId, stockName);
+
+        // check stock transfer
+        assertThat(bankStock.getQuantity()).isEqualTo(2);
+        assertThat(walletStock.getQuantity()).isEqualTo(0);
+
+        // check audit log
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogRepository).save(captor.capture());
+        AuditLog savedLog = captor.getValue();
+
+        assertThat(savedLog.getType()).isEqualTo(TransactionType.SELL);
+        assertThat(savedLog.getWalletId()).isEqualTo(walletId);
+        assertThat(savedLog.getStockName()).isEqualTo(stockName);
+    }
 }
