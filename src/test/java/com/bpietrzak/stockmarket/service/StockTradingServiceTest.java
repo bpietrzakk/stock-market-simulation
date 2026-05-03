@@ -5,13 +5,15 @@ import com.bpietrzak.stockmarket.exception.NotFoundException;
 import com.bpietrzak.stockmarket.model.BankStock;
 import com.bpietrzak.stockmarket.model.Wallet;
 import com.bpietrzak.stockmarket.model.WalletStock;
+import com.bpietrzak.stockmarket.model.AuditLog;
+import com.bpietrzak.stockmarket.model.enums.TransactionType;
 import com.bpietrzak.stockmarket.repository.AuditLogRepository;
 import com.bpietrzak.stockmarket.repository.BankStockRepository;
 import com.bpietrzak.stockmarket.repository.WalletRepository;
 import com.bpietrzak.stockmarket.repository.WalletStockRepository;
-import org.hibernate.annotations.NotFound;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,7 +21,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,11 +78,11 @@ class StockTradingServiceTest {
     }
 
     @Test
-    void sellShouldThrowInvalidOperationWhenWalletHasNoStock() {
+    void sellShouldThrowInvalidOperationWhenWalletStockDoesNotExist() {
         // create data and mock
         UUID walletId = UUID.randomUUID();
         Wallet wallet = new Wallet(walletId);
-        String stockName = "NotInWalletStock";
+        String stockName = "WalletStockDoesNotExist";
         BankStock bankStock = new BankStock(stockName, 1);
         when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
@@ -91,11 +95,11 @@ class StockTradingServiceTest {
     }
 
     @Test
-    void sellShouldThrowInvalidOperationWhenWalletHasNoStocks() {
+    void sellShouldThrowInvalidOperationWhenWalletStockQuantityIsZero() {
         // create data and mock
         UUID walletId = UUID.randomUUID();
         Wallet wallet = new Wallet(walletId);
-        String stockName = "NotInWalletStock";
+        String stockName = "WalletStockQuantityIsZero";
         BankStock bankStock = new BankStock(stockName, 1);
         WalletStock walletStock = new WalletStock(wallet, stockName, 0);
         when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
@@ -106,5 +110,34 @@ class StockTradingServiceTest {
         assertThatThrownBy(() -> service.sell(walletId, stockName))
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining(stockName);
+    }
+
+    @Test
+    void buyShouldTransferStockFromBankToWalletAndLogIt() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        Wallet wallet = new Wallet(walletId);
+        String stockName = "example";
+        BankStock bankStock = new BankStock(stockName, 1);
+        WalletStock walletStock = new WalletStock(wallet, stockName, 1);
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(bankStock));
+        when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
+        when(walletStockRepository.findByWalletAndName(wallet, stockName)).thenReturn(Optional.of(walletStock));
+
+        // call
+        service.buy(walletId, stockName);
+
+        // check stock transfer
+        assertThat(bankStock.getQuantity()).isEqualTo(0);
+        assertThat(walletStock.getQuantity()).isEqualTo(2);
+
+        // check audit log
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogRepository).save(captor.capture());
+        AuditLog savedLog = captor.getValue();
+
+        assertThat(savedLog.getType()).isEqualTo(TransactionType.BUY);
+        assertThat(savedLog.getWalletId()).isEqualTo(walletId);
+        assertThat(savedLog.getStockName()).isEqualTo(stockName);
     }
 }
