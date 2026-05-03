@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.mockito.ArgumentCaptor;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,9 +54,16 @@ class BankServiceTest {
         // call
         service.setBankState(request);
 
-        // check old stocks deleted and new stocks saved
+        // check old stocks deleted
         verify(bankStockRepository).deleteAllInBatch();
-        verify(bankStockRepository).saveAll(any());
+
+        // check new stocks saved
+        ArgumentCaptor<List<BankStock>> captor = ArgumentCaptor.forClass(List.class);
+        verify(bankStockRepository).saveAll(captor.capture());
+        List<BankStock> saved = captor.getValue();
+        assertThat(saved).hasSize(1);
+        assertThat(saved.get(0).getName()).isEqualTo("newstock");
+        assertThat(saved.get(0).getQuantity()).isEqualTo(20);
     }
 
     @Test
@@ -68,6 +77,8 @@ class BankServiceTest {
 
         // check old stocks deleted and nothing saved
         verify(bankStockRepository).deleteAllInBatch();
-        verify(bankStockRepository).saveAll(List.of());
+        ArgumentCaptor<List<BankStock>> captor = ArgumentCaptor.forClass(List.class);
+        verify(bankStockRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).isEmpty();
     }
 }
