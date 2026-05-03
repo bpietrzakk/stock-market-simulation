@@ -15,7 +15,10 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.mockito.InOrder;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,8 +57,10 @@ class BankServiceTest {
         // call
         service.setBankState(request);
 
-        // check old stocks deleted
-        verify(bankStockRepository).deleteAllInBatch();
+        // check delete before save
+        InOrder inOrder = inOrder(bankStockRepository);
+        inOrder.verify(bankStockRepository).deleteAllInBatch();
+        inOrder.verify(bankStockRepository).saveAll(any());
 
         // check new stocks saved
         ArgumentCaptor<List<BankStock>> captor = ArgumentCaptor.forClass(List.class);
