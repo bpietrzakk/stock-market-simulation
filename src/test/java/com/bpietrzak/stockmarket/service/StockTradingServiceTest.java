@@ -1,6 +1,8 @@
 package com.bpietrzak.stockmarket.service;
 
+import com.bpietrzak.stockmarket.exception.InvalidOperationException;
 import com.bpietrzak.stockmarket.exception.NotFoundException;
+import com.bpietrzak.stockmarket.model.BankStock;
 import com.bpietrzak.stockmarket.repository.AuditLogRepository;
 import com.bpietrzak.stockmarket.repository.BankStockRepository;
 import com.bpietrzak.stockmarket.repository.WalletRepository;
@@ -31,15 +33,28 @@ class StockTradingServiceTest {
     @InjectMocks private StockTradingService service;
 
     @Test
-    void buyShouldThrowNotFoundEWhenStockDoesNotExist() {
+    void buyShouldThrowNotFoundWhenStockDoesNotExist() {
         // create data and mock
         UUID walletId = UUID.randomUUID();
-        String stockName = "dontexist";
+        String stockName = "DontExist";
         when(bankStockRepository.findByName(stockName)).thenReturn(Optional.empty());
 
         // call and check if an exception was thrown
         assertThatThrownBy(() -> service.buy(walletId, stockName))
                 .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(stockName);
+    }
+    @Test
+    void buyShouldThrowInvalidOperationWhenBankHasNoStocks() {
+        // create data and mock
+        UUID walletId = UUID.randomUUID();
+        String stockName = "ZeroInBank";
+        BankStock emptyStock = new BankStock(stockName, 0);
+        when(bankStockRepository.findByName(stockName)).thenReturn(Optional.of(emptyStock));
+
+        // call and check if an exception was thrown
+        assertThatThrownBy(() -> service.buy(walletId, stockName))
+                .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining(stockName);
     }
 }
