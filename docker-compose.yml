@@ -35,6 +35,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      app-1:
+        condition: service_started
 
   nginx:
     image: nginx:alpine
