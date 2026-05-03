@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: stockmarket
       POSTGRES_PASSWORD: stockmarket
       POSTGRES_DB: stockmarket
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,11 +14,9 @@ services:
       timeout: 3s
       retries: 10
 
-  app:
+  app-1:
     build: .
-    container_name: stockmarket-app
-    ports:
-      - "8080:8080"
+    container_name: stockmarket-app-1
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stockmarket
       SPRING_DATASOURCE_USERNAME: stockmarket
@@ -28,6 +24,28 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  app-2:
+    build: .
+    container_name: stockmarket-app-2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stockmarket
+      SPRING_DATASOURCE_USERNAME: stockmarket
+      SPRING_DATASOURCE_PASSWORD: stockmarket
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: stockmarket-nginx
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app-1
+      - app-2
 
 volumes:
   postgres-data:
